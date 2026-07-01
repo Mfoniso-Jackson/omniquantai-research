@@ -2,6 +2,7 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 import json
 import mimetypes
+import os
 import sys
 import traceback
 from urllib.parse import parse_qs, urlparse
@@ -31,6 +32,10 @@ class OmniQuantHandler(SimpleHTTPRequestHandler):
             parsed = urlparse(self.path)
             if parsed.path == "/":
                 self._send_file(STATIC_DIR / "index.html", "text/html; charset=utf-8")
+                return
+
+            if parsed.path == "/health":
+                self._send_json({"status": "ok", "service": "OmniQuantAI Research"})
                 return
 
             if parsed.path == "/api/memo":
@@ -116,9 +121,11 @@ class OmniQuantHandler(SimpleHTTPRequestHandler):
 
 
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
-    server = ThreadingHTTPServer(("127.0.0.1", port), OmniQuantHandler)
-    print(f"OmniQuantAI MVP running at http://127.0.0.1:{port}")
+    port = int(os.getenv("PORT") or (sys.argv[1] if len(sys.argv) > 1 else 8000))
+    host = os.getenv("HOST", "0.0.0.0")
+    server = ThreadingHTTPServer((host, port), OmniQuantHandler)
+    display_host = "127.0.0.1" if host == "0.0.0.0" else host
+    print(f"OmniQuantAI MVP running at http://{display_host}:{port}")
     print("Press Ctrl+C to stop.")
     try:
         server.serve_forever()

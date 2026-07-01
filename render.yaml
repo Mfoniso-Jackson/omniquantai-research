@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: omniquantai-research
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: python3 app.py
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9

@@ -51,6 +51,43 @@ The recommendation uses this context to adjust position-sizing language and flag
 
 Use **Export Memo** after a run to download a Markdown investment committee memo.
 
+## Deploy
+
+The app is deployment-ready for simple Python web hosts. It binds to `0.0.0.0` and reads the platform `PORT` environment variable.
+
+### Render
+
+1. Create a new Render Web Service from this GitHub repo.
+2. Render can use `render.yaml`, or configure manually:
+   - Build command: leave blank
+   - Start command: `python3 app.py`
+   - Health check path: `/health`
+3. Add optional environment variables for live providers:
+   - `ALPHA_VANTAGE_API_KEY`
+   - `NEWS_API_KEY`
+   - `FRED_API_KEY`
+
+### Railway
+
+Railway can use the included `Procfile`:
+
+```bash
+web: python3 app.py
+```
+
+Add the optional API keys in Railway variables if you want live data.
+
+### Fly.io
+
+The included `fly.toml` runs the app on port `8080`. After installing the Fly CLI:
+
+```bash
+fly launch
+fly deploy
+```
+
+For a hackathon demo, Render is usually the quickest path.
+
 ## Workflow
 
 ```text
