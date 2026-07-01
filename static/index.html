@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OmniQuantAI</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar" aria-label="Research controls">
+        <div>
+          <p class="eyebrow">Autonomous financial research</p>
+          <h1>OmniQuantAI</h1>
+        </div>
+        <div class="status" id="providerMode">Ready</div>
+      </section>
+
+      <section class="query-panel">
+        <label for="query">Investment question</label>
+        <div class="input-row">
+          <input id="query" value="Analyse Nvidia as a long-term investment." autocomplete="off">
+          <button id="runResearch">Run Research</button>
+        </div>
+      </section>
+
+      <section class="summary-band" id="summaryBand">
+        <div>
+          <span>Recommendation</span>
+          <strong id="action">-</strong>
+        </div>
+        <div>
+          <span>Confidence</span>
+          <strong id="confidence">-</strong>
+        </div>
+        <div>
+          <span>Asset</span>
+          <strong id="asset">-</strong>
+        </div>
+        <div>
+          <span>Horizon</span>
+          <strong id="horizon">-</strong>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>Market Evidence</h2>
+          <div id="market" class="content muted">No run yet.</div>
+        </article>
+        <article class="panel">
+          <h2>News Evidence</h2>
+          <div id="news" class="content muted">No run yet.</div>
+        </article>
+        <article class="panel">
+          <h2>Macro Evidence</h2>
+          <div id="macro" class="content muted">No run yet.</div>
+        </article>
+        <article class="panel wide">
+          <h2>Evidence Table</h2>
+          <div id="evidence" class="content muted">No run yet.</div>
+        </article>
+        <article class="panel wide">
+          <h2>Hypotheses</h2>
+          <div id="hypotheses" class="content muted">No run yet.</div>
+        </article>
+        <article class="panel">
+          <h2>Risks</h2>
+          <div id="risks" class="content muted">No run yet.</div>
+        </article>
+        <article class="panel">
+          <h2>Recommendation</h2>
+          <div id="recommendation" class="content muted">No run yet.</div>
+        </article>
+        <article class="panel wide">
+          <h2>Explanation</h2>
+          <div id="explanation" class="content muted">No run yet.</div>
+        </article>
+      </section>
+
+      <section class="query-panel scenario-panel">
+        <label for="scenario">Follow-up scenario</label>
+        <div class="input-row">
+          <input id="scenario" value="What if interest rates increase by 1%?" autocomplete="off">
+          <button id="runScenario">Run Scenario</button>
+        </div>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,2 @@
+"""OmniQuantAI hackathon MVP package."""
+
