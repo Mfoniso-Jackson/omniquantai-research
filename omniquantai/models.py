@@ -10,6 +10,8 @@ class Evidence:
     strength: str
     source: str
     detail: str
+    source_url: str = ""
+    timestamp: str = ""
 
 
 @dataclass
@@ -46,6 +48,7 @@ class ResearchRun:
     risks: Dict[str, Any]
     recommendation: Recommendation
     explanation: Dict[str, Any]
+    portfolio_context: Dict[str, Any] = field(default_factory=dict)
     workflow: List[str] = field(default_factory=list)
 
 

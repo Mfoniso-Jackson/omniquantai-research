@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from .models import Evidence, Hypothesis, Recommendation
-from .providers import MockMacroProvider, MockMarketProvider, MockNewsProvider
+from .providers import AlphaVantageMarketProvider, FredMacroProvider, NewsApiProvider, utc_now
 
 
 class OrchestratorAgent:
@@ -18,7 +18,7 @@ class OrchestratorAgent:
 
 class MarketAgent:
     def __init__(self, provider=None):
-        self.provider = provider or MockMarketProvider()
+        self.provider = provider or AlphaVantageMarketProvider()
 
     def run(self, asset: Dict[str, str]) -> Dict[str, Any]:
         return self.provider.get_market_snapshot(asset["ticker"], asset["company"])
@@ -26,7 +26,7 @@ class MarketAgent:
 
 class NewsAgent:
     def __init__(self, provider=None):
-        self.provider = provider or MockNewsProvider()
+        self.provider = provider or NewsApiProvider()
 
     def run(self, asset: Dict[str, str]) -> Dict[str, Any]:
         return self.provider.get_news_snapshot(asset["ticker"], asset["company"])
@@ -34,7 +34,7 @@ class NewsAgent:
 
 class MacroAgent:
     def __init__(self, provider=None):
-        self.provider = provider or MockMacroProvider()
+        self.provider = provider or FredMacroProvider()
 
     def run(self, asset: Dict[str, str]) -> Dict[str, Any]:
         return self.provider.get_macro_snapshot(asset["ticker"], asset["company"])
@@ -42,13 +42,17 @@ class MacroAgent:
 
 class EvidenceAggregator:
     def run(self, market: Dict[str, Any], news: Dict[str, Any], macro: Dict[str, Any]) -> List[Evidence]:
+        market_source = market.get("source_metadata", {})
+        news_source = news.get("source_metadata", {})
+        macro_source = macro.get("source_metadata", {})
+        ts = utc_now()
         evidence = [
-            Evidence("bullish", "Positive long-term momentum", "medium", "Market Agent", market["trend_summary"]),
-            Evidence("bearish", "Premium valuation leaves less room for disappointment", "high", "Market Agent", market["valuation_snapshot"]),
-            Evidence("bullish", "AI infrastructure demand remains a structural revenue driver", "high", "News Agent", news["recent_news"][0]),
-            Evidence("neutral", "Analyst debate focuses on durability of the current growth curve", "medium", "News Agent", news["analyst_commentary"]),
-            Evidence("bearish", "Higher real rates could compress multiples", "medium", "Macro Agent", macro["asset_specific_macro_risks"][0]),
-            Evidence("neutral", "Central bank path remains data dependent", "medium", "Macro Agent", macro["central_bank_outlook"]),
+            Evidence("bullish", "Positive long-term momentum", "medium", f"Market Agent / {market_source.get('name', 'Provider')}", market["trend_summary"], market_source.get("url", ""), market_source.get("timestamp", ts)),
+            Evidence("bearish", "Premium valuation leaves less room for disappointment", "high", f"Market Agent / {market_source.get('name', 'Provider')}", market["valuation_snapshot"], market_source.get("url", ""), market_source.get("timestamp", ts)),
+            Evidence("bullish", "AI infrastructure demand remains a structural revenue driver", "high", f"News Agent / {news_source.get('name', 'Provider')}", news["recent_news"][0], news_source.get("url", ""), news_source.get("timestamp", ts)),
+            Evidence("neutral", "Analyst debate focuses on durability of the current growth curve", "medium", f"News Agent / {news_source.get('name', 'Provider')}", news["analyst_commentary"], news_source.get("url", ""), news_source.get("timestamp", ts)),
+            Evidence("bearish", "Higher real rates could compress multiples", "medium", f"Macro Agent / {macro_source.get('name', 'Provider')}", macro["asset_specific_macro_risks"][0], macro_source.get("url", ""), macro_source.get("timestamp", ts)),
+            Evidence("neutral", "Central bank path remains data dependent", "medium", f"Macro Agent / {macro_source.get('name', 'Provider')}", macro["central_bank_outlook"], macro_source.get("url", ""), macro_source.get("timestamp", ts)),
         ]
         return evidence
 
@@ -117,11 +121,22 @@ class RiskAnalysisAgent:
 
 
 class RecommendationAgent:
-    def run(self, hypotheses: List[Hypothesis], risks: Dict[str, Any], scenario: Dict[str, Any] = None) -> Recommendation:
+    def run(
+        self,
+        hypotheses: List[Hypothesis],
+        risks: Dict[str, Any],
+        scenario: Dict[str, Any] = None,
+        portfolio_context: Dict[str, Any] = None,
+    ) -> Recommendation:
         rate_shock = scenario and scenario.get("rate_shock_bps", 0) >= 100
         base = next(item for item in hypotheses if item.name == "Base case")
         bull = next(item for item in hypotheses if item.name == "Bull case")
         bear = next(item for item in hypotheses if item.name == "Bear case")
+
+        portfolio_context = portfolio_context or {}
+        current_weight = portfolio_context.get("current_weight")
+        max_weight = portfolio_context.get("max_weight")
+        mandate = portfolio_context.get("mandate", "").strip()
 
         if rate_shock:
             action = "HOLD"
@@ -135,6 +150,22 @@ class RecommendationAgent:
             action = "HOLD"
             confidence = 66
             sizing = "Keep exposure close to benchmark or mandate target until evidence improves."
+
+        if current_weight not in (None, "") or max_weight not in (None, "") or mandate:
+            context_bits = []
+            if current_weight not in (None, ""):
+                context_bits.append(f"current exposure {current_weight}%")
+            if max_weight not in (None, ""):
+                context_bits.append(f"max mandate weight {max_weight}%")
+            if mandate:
+                context_bits.append(f"mandate: {mandate}")
+            sizing = f"{sizing} Portfolio context considered ({'; '.join(context_bits)})."
+            if max_weight not in (None, "") and current_weight not in (None, ""):
+                try:
+                    if float(current_weight) >= float(max_weight):
+                        sizing += " Do not add; exposure is already at or above the stated cap."
+                except ValueError:
+                    pass
 
         return Recommendation(
             action,
@@ -159,6 +190,7 @@ class ExplanationAgent:
         risks: Dict[str, Any],
         recommendation: Recommendation,
         scenario: Dict[str, Any] = None,
+        portfolio_context: Dict[str, Any] = None,
     ) -> Dict[str, Any]:
         scenario_note = None
         if scenario:
@@ -179,6 +211,7 @@ class ExplanationAgent:
                 f"The recommendation is {recommendation.action} with {recommendation.confidence_score}/100 confidence because "
                 "the combined bull and base cases outweigh the bear case, while risks are meaningful enough to require staged exposure."
             ),
+            "portfolio_context": portfolio_context or {},
             "counterarguments": [
                 "The market may already discount several years of exceptional AI growth.",
                 "Competitive pressure or customer capex digestion could reset expectations.",

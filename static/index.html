@@ -22,6 +22,20 @@
           <input id="query" value="Analyse Nvidia as a long-term investment." autocomplete="off">
           <button id="runResearch">Run Research</button>
         </div>
+        <div class="portfolio-row" aria-label="Portfolio context">
+          <label>
+            Current weight %
+            <input id="currentWeight" inputmode="decimal" placeholder="3.5">
+          </label>
+          <label>
+            Max weight %
+            <input id="maxWeight" inputmode="decimal" placeholder="7.5">
+          </label>
+          <label>
+            Mandate
+            <input id="mandate" placeholder="Long-term growth portfolio">
+          </label>
+        </div>
       </section>
 
       <section class="summary-band" id="summaryBand">
@@ -69,7 +83,10 @@
           <div id="risks" class="content muted">No run yet.</div>
         </article>
         <article class="panel">
-          <h2>Recommendation</h2>
+          <div class="panel-header">
+            <h2>Recommendation</h2>
+            <button class="secondary-button" id="exportMemo" disabled>Export Memo</button>
+          </div>
           <div id="recommendation" class="content muted">No run yet.</div>
         </article>
         <article class="panel wide">

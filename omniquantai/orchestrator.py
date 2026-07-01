@@ -45,7 +45,8 @@ class OmniQuantOrchestrator:
         self.recommendation = RecommendationAgent()
         self.explanation = ExplanationAgent()
 
-    def run_research(self, query: str) -> Dict[str, Any]:
+    def run_research(self, query: str, portfolio_context: Dict[str, Any] = None) -> Dict[str, Any]:
+        portfolio_context = self._normalize_portfolio_context(portfolio_context or {})
         asset = self.orchestrator.parse_request(query)
         market = self.market.run(asset)
         news = self.news.run(asset)
@@ -53,8 +54,8 @@ class OmniQuantOrchestrator:
         evidence = self.aggregator.run(market, news, macro)
         hypotheses = self.hypotheses.run(asset, evidence)
         risks = self.risk.run(market, macro)
-        recommendation = self.recommendation.run(hypotheses, risks)
-        explanation = self.explanation.run(asset, evidence, hypotheses, risks, recommendation)
+        recommendation = self.recommendation.run(hypotheses, risks, portfolio_context=portfolio_context)
+        explanation = self.explanation.run(asset, evidence, hypotheses, risks, recommendation, portfolio_context=portfolio_context)
 
         run = ResearchRun(
             run_id=str(uuid4()),
@@ -69,6 +70,7 @@ class OmniQuantOrchestrator:
             risks=risks,
             recommendation=recommendation,
             explanation=explanation,
+            portfolio_context=portfolio_context,
             workflow=WORKFLOW,
         )
         payload = asdict(run)
@@ -86,6 +88,7 @@ class OmniQuantOrchestrator:
         market = base["market"]
         news = base["news"]
         macro = dict(base["macro"])
+        portfolio_context = self._normalize_portfolio_context(base.get("portfolio_context", {}))
 
         if scenario_context.get("rate_shock_bps"):
             macro["interest_rate_environment"] = "Restrictive and tightening after a 100 bps upward shock"
@@ -101,8 +104,10 @@ class OmniQuantOrchestrator:
                     "stance": "bearish",
                     "claim": "Scenario shock raises discount-rate pressure",
                     "strength": "high",
-                    "source": "Macro Agent",
+                    "source": "Macro Agent / Scenario Analysis",
                     "detail": "A 100 bps rate increase typically weighs on high-multiple growth equities.",
+                    "source_url": macro.get("source_metadata", {}).get("url", ""),
+                    "timestamp": utc_now(),
                 }
             )
 
@@ -111,8 +116,8 @@ class OmniQuantOrchestrator:
         normalized = [item if isinstance(item, Evidence) else Evidence(**item) for item in evidence]
         hypotheses = self.hypotheses.run(asset, normalized, scenario_context)
         risks = self.risk.run(market, macro, scenario_context)
-        recommendation = self.recommendation.run(hypotheses, risks, scenario_context)
-        explanation = self.explanation.run(asset, normalized, hypotheses, risks, recommendation, scenario_context)
+        recommendation = self.recommendation.run(hypotheses, risks, scenario_context, portfolio_context)
+        explanation = self.explanation.run(asset, normalized, hypotheses, risks, recommendation, scenario_context, portfolio_context)
 
         scenario_run = ResearchRun(
             run_id=str(uuid4()),
@@ -127,6 +132,7 @@ class OmniQuantOrchestrator:
             risks=risks,
             recommendation=recommendation,
             explanation=explanation,
+            portfolio_context=portfolio_context,
             workflow=WORKFLOW,
         )
         payload = asdict(scenario_run)
@@ -135,6 +141,20 @@ class OmniQuantOrchestrator:
         payload["provider_mode"] = provider_mode()
         self.store.save(payload)
         return payload
+
+    def get_run(self, run_id: str = None) -> Dict[str, Any]:
+        run = self.store.get(run_id) if run_id else self.store.latest()
+        if not run:
+            raise ValueError("No research run found.")
+        return run
+
+    def _normalize_portfolio_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        normalized = {}
+        for key in ("current_weight", "max_weight", "mandate"):
+            value = context.get(key)
+            if value not in (None, ""):
+                normalized[key] = value
+        return normalized
 
     def _parse_scenario(self, scenario: str) -> Dict[str, Any]:
         lowered = scenario.lower()

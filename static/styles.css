@@ -92,6 +92,13 @@ label {
   gap: 10px;
 }
 
+.portfolio-row {
+  display: grid;
+  grid-template-columns: 150px 150px 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
 input {
   width: 100%;
   min-height: 46px;
@@ -117,6 +124,22 @@ button {
 button:disabled {
   cursor: wait;
   opacity: 0.62;
+}
+
+.secondary-button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--blue);
+  font-size: 0.82rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .summary-band {
@@ -278,6 +301,7 @@ button:disabled {
 
   .topbar,
   .input-row,
+  .portfolio-row,
   .summary-band,
   .grid,
   .hypothesis-row {

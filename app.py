@@ -4,7 +4,9 @@ import json
 import mimetypes
 import sys
 import traceback
+from urllib.parse import parse_qs, urlparse
 
+from omniquantai.exporters import render_investment_committee_memo
 from omniquantai.orchestrator import OmniQuantOrchestrator
 from omniquantai.storage import RunStore
 
@@ -25,19 +27,33 @@ class OmniQuantHandler(SimpleHTTPRequestHandler):
         sys.stdout.write("%s - %s\n" % (self.address_string(), fmt % args))
 
     def do_GET(self):
-        if self.path == "/" or self.path.startswith("/?"):
-            self._send_file(STATIC_DIR / "index.html", "text/html; charset=utf-8")
-            return
-
-        if self.path.startswith("/static/"):
-            relative = self.path.removeprefix("/static/").split("?", 1)[0]
-            target = (STATIC_DIR / relative).resolve()
-            if STATIC_DIR in target.parents and target.exists() and target.is_file():
-                content_type = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
-                self._send_file(target, content_type)
+        try:
+            parsed = urlparse(self.path)
+            if parsed.path == "/":
+                self._send_file(STATIC_DIR / "index.html", "text/html; charset=utf-8")
                 return
 
-        self._send_json({"error": "Not found"}, status=404)
+            if parsed.path == "/api/memo":
+                params = parse_qs(parsed.query)
+                run_id = params.get("run_id", [None])[0]
+                run = orchestrator.get_run(run_id)
+                memo = render_investment_committee_memo(run)
+                filename = f"omniquantai-{run['asset']['ticker'].lower()}-memo.md"
+                self._send_text(memo, "text/markdown; charset=utf-8", filename)
+                return
+
+            if parsed.path.startswith("/static/"):
+                relative = parsed.path.removeprefix("/static/")
+                target = (STATIC_DIR / relative).resolve()
+                if STATIC_DIR in target.parents and target.exists() and target.is_file():
+                    content_type = mimetypes.guess_type(str(target))[0] or "application/octet-stream"
+                    self._send_file(target, content_type)
+                    return
+
+            self._send_json({"error": "Not found"}, status=404)
+        except Exception as exc:
+            traceback.print_exc()
+            self._send_json({"error": str(exc)}, status=500)
 
     def do_POST(self):
         try:
@@ -47,7 +63,8 @@ class OmniQuantHandler(SimpleHTTPRequestHandler):
                 if not query:
                     self._send_json({"error": "A ticker or company question is required."}, status=400)
                     return
-                result = orchestrator.run_research(query)
+                portfolio_context = body.get("portfolio_context", {})
+                result = orchestrator.run_research(query, portfolio_context=portfolio_context)
                 self._send_json(result)
                 return
 
@@ -76,6 +93,16 @@ class OmniQuantHandler(SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _send_text(self, text, content_type, filename=None):
+        data = text.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        if filename:
+            self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         self.end_headers()
         self.wfile.write(data)
 

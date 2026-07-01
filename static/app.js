@@ -26,6 +26,7 @@ async function postJson(url, body) {
 
 function renderKv(data) {
   return `<dl class="kv">${Object.entries(data)
+    .filter(([key]) => key !== "source_metadata")
     .map(([key, value]) => {
       const cleanKey = key.replaceAll("_", " ");
       const cleanValue = Array.isArray(value)
@@ -42,19 +43,50 @@ function renderList(items) {
 
 function renderEvidence(items) {
   return `<table class="evidence-table">
-    <thead><tr><th>Stance</th><th>Claim</th><th>Strength</th><th>Source</th><th>Detail</th></tr></thead>
+    <thead><tr><th>Stance</th><th>Claim</th><th>Strength</th><th>Source</th><th>Detail</th><th>Timestamp</th></tr></thead>
     <tbody>${items
       .map(
-        (item) => `<tr>
-          <td><span class="tag ${escapeHtml(item.stance)}">${escapeHtml(item.stance)}</span></td>
-          <td>${escapeHtml(item.claim)}</td>
-          <td>${escapeHtml(item.strength)}</td>
-          <td>${escapeHtml(item.source)}</td>
-          <td>${escapeHtml(item.detail)}</td>
-        </tr>`
+        (item) => {
+          const citation = item.source_url
+            ? `<div><a href="${escapeHtml(item.source_url)}" target="_blank" rel="noreferrer">Citation</a></div>`
+            : "";
+          return `<tr>
+            <td><span class="tag ${escapeHtml(item.stance)}">${escapeHtml(item.stance)}</span></td>
+            <td>${escapeHtml(item.claim)}</td>
+            <td>${escapeHtml(item.strength)}</td>
+            <td>${escapeHtml(item.source)}${citation}</td>
+            <td>${escapeHtml(item.detail)}</td>
+            <td>${escapeHtml(item.timestamp || "n/a")}</td>
+          </tr>`;
+        }
       )
       .join("")}</tbody>
   </table>`;
+}
+
+function portfolioContext() {
+  return {
+    current_weight: $("currentWeight").value.trim(),
+    max_weight: $("maxWeight").value.trim(),
+    mandate: $("mandate").value.trim(),
+  };
+}
+
+function renderPortfolioContext(context) {
+  const entries = Object.entries(context || {});
+  if (!entries.length) return "";
+  return `<h2>Portfolio Context</h2><dl class="kv">${entries
+    .map(([key, value]) => `<dt>${escapeHtml(key.replaceAll("_", " "))}</dt><dd>${escapeHtml(value)}</dd>`)
+    .join("")}</dl>`;
+}
+
+function memoUrl() {
+  return state.runId ? `/api/memo?run_id=${encodeURIComponent(state.runId)}` : "#";
+}
+
+function exportMemo() {
+  if (!state.runId) return;
+  window.location.href = memoUrl();
 }
 
 function renderHypotheses(items) {
@@ -87,6 +119,7 @@ function renderExplanation(explanation) {
 
 function renderRun(run) {
   state.runId = run.run_id;
+  $("exportMemo").disabled = false;
   $("providerMode").textContent = run.provider_mode || "Mock data";
   $("action").innerHTML = `<span class="tag ${run.recommendation.action.toLowerCase()}">${escapeHtml(run.recommendation.action)}</span>`;
   $("confidence").textContent = `${run.recommendation.confidence_score}/100`;
@@ -109,7 +142,7 @@ function renderRun(run) {
   $("hypotheses").innerHTML = renderHypotheses(run.hypotheses);
   $("risks").innerHTML = renderKv(run.risks);
   $("recommendation").innerHTML = renderKv(run.recommendation);
-  $("explanation").innerHTML = renderExplanation(run.explanation);
+  $("explanation").innerHTML = renderPortfolioContext(run.portfolio_context) + renderExplanation(run.explanation);
 }
 
 async function runResearch() {
@@ -117,7 +150,10 @@ async function runResearch() {
   button.disabled = true;
   button.textContent = "Running";
   try {
-    const run = await postJson("/api/research", { query: $("query").value });
+    const run = await postJson("/api/research", {
+      query: $("query").value,
+      portfolio_context: portfolioContext(),
+    });
     renderRun(run);
   } catch (error) {
     alert(error.message);
@@ -144,6 +180,7 @@ async function runScenario() {
 
 $("runResearch").addEventListener("click", runResearch);
 $("runScenario").addEventListener("click", runScenario);
+$("exportMemo").addEventListener("click", exportMemo);
 $("query").addEventListener("keydown", (event) => {
   if (event.key === "Enter") runResearch();
 });

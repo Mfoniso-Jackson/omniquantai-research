@@ -10,13 +10,13 @@ OmniQuantAI rates Nvidia (NVDA) as BUY with 72/100 confidence. The thesis is sup
 
 ## Key Evidence
 
-| Stance | Evidence | Strength | Source |
-| --- | --- | --- | --- |
-| Bullish | AI infrastructure demand remains a structural revenue driver | High | News Agent |
-| Bullish | Long-term uptrend remains intact | Medium | Market Agent |
-| Bearish | Premium valuation leaves less room for disappointment | High | Market Agent |
-| Bearish | Higher real rates could compress multiples | Medium | Macro Agent |
-| Neutral | Analyst debate focuses on durability of growth | Medium | News Agent |
+| Stance | Evidence | Strength | Source | Timestamp |
+| --- | --- | --- | --- | --- |
+| Bullish | AI infrastructure demand remains a structural revenue driver | High | News Agent / Mock News Provider | Run timestamp |
+| Bullish | Long-term uptrend remains intact | Medium | Market Agent / Mock Market Provider | Run timestamp |
+| Bearish | Premium valuation leaves less room for disappointment | High | Market Agent / Mock Market Provider | Run timestamp |
+| Bearish | Higher real rates could compress multiples | Medium | Macro Agent / Mock Macro Provider | Run timestamp |
+| Neutral | Analyst debate focuses on durability of growth | Medium | News Agent / Mock News Provider | Run timestamp |
 
 ## Competing Hypotheses
 
@@ -36,8 +36,14 @@ OmniQuantAI rates Nvidia (NVDA) as BUY with 72/100 confidence. The thesis is sup
 
 BUY with staged entries up to a risk-budgeted core position. Time horizon is 3-5 years, reviewed after earnings and major macro shifts.
 
+If portfolio context is supplied, sizing incorporates current weight, maximum mandate weight, and mandate text. If current exposure is already at or above the stated cap, OmniQuantAI warns against adding.
+
 Human approval is required before any portfolio action. This is not financial advice.
 
 ## Scenario: Interest Rates Increase By 1%
 
 The macro shock raises discount-rate pressure. Bull-case probability falls from 36% to 29%, bear-case probability rises from 20% to 26%, and the recommendation moves to HOLD with 64/100 confidence. Suggested action becomes maintaining existing strategic exposure while avoiding new additions until valuation or rate pressure improves.
+
+## Export
+
+The UI can export the run as a Markdown investment committee memo with evidence, citations, timestamps, risks, recommendation, and disclaimer.
