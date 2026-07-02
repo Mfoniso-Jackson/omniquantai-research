@@ -59,7 +59,7 @@ The app is deployment-ready for simple Python web hosts. It binds to `0.0.0.0` a
 
 1. Create a new Render Web Service from this GitHub repo.
 2. Render can use `render.yaml`, or configure manually:
-   - Build command: leave blank
+   - Build command: `pip install -r requirements.txt`
    - Start command: `python3 app.py`
    - Health check path: `/health`
 3. Add optional environment variables for live providers:

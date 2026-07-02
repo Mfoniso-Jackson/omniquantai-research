@@ -1,0 +1,2 @@
+# OmniQuantAI uses only the Python standard library for the MVP.
+# This file exists so Render's default build command succeeds.
