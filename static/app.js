@@ -24,6 +24,87 @@ async function postJson(url, body) {
   return payload;
 }
 
+function renderBids(bids) {
+  return `<table class="evidence-table">
+    <thead><tr><th>Seller</th><th>Price</th><th>Speed</th><th>Confidence</th><th>Value</th><th>Reasoning</th></tr></thead>
+    <tbody>${bids
+      .map(
+        (bid) => `<tr>
+          <td>${escapeHtml(bid.name)}<div class="muted">${escapeHtml(bid.domain)}</div></td>
+          <td>${escapeHtml(bid.price_sol)} SOL</td>
+          <td>${escapeHtml(bid.speed_seconds)}s</td>
+          <td>${escapeHtml(bid.confidence)}/100</td>
+          <td><strong>${escapeHtml(bid.value_score)}</strong></td>
+          <td>${escapeHtml(bid.bid_reasoning)}<div class="muted">${escapeHtml(bid.reason)}</div></td>
+        </tr>`
+      )
+      .join("")}</tbody>
+  </table>`;
+}
+
+function renderMarketplace(flow) {
+  $("marketStatus").textContent = "Auction complete";
+  $("winnerName").textContent = flow.selection.selected_winner.name;
+  $("escrowStatus").textContent = flow.escrow.status;
+  $("marketRecommendation").textContent = flow.final_report.recommendation;
+
+  $("agentBids").classList.remove("muted");
+  $("winnerReasoning").classList.remove("muted");
+  $("escrowPanel").classList.remove("muted");
+  $("deliveryPanel").classList.remove("muted");
+  $("finalThesis").classList.remove("muted");
+
+  $("agentBids").innerHTML = renderBids(flow.bids);
+  $("winnerReasoning").innerHTML = `
+    <p><strong>${escapeHtml(flow.selection.selected_winner.name)}</strong></p>
+    <p>${escapeHtml(flow.selection.final_reasoning)}</p>
+    <p class="muted">CoralOS pattern: ${escapeHtml(flow.coralos.coordination_pattern)}</p>
+    <p class="muted">Session: ${escapeHtml(flow.coralos.session_id)}</p>
+  `;
+  $("escrowPanel").innerHTML = `
+    <dl class="kv">
+      <dt>Network</dt><dd>${escapeHtml(flow.escrow.network)}</dd>
+      <dt>Status</dt><dd>${escapeHtml(flow.escrow.status)}</dd>
+      <dt>Amount</dt><dd>${escapeHtml(flow.escrow.amount_sol)} SOL</dd>
+      <dt>Reference</dt><dd>${escapeHtml(flow.escrow.reference)}</dd>
+      <dt>Link</dt><dd><a href="${escapeHtml(flow.escrow.settlement_link)}" target="_blank" rel="noreferrer">Devnet reference</a></dd>
+    </dl>
+    <p class="muted">${escapeHtml(flow.escrow.note)}</p>
+  `;
+  $("deliveryPanel").innerHTML = `
+    <p><strong>${escapeHtml(flow.delivery.agent_name)}</strong></p>
+    <p>${escapeHtml(flow.delivery.recommendation_contribution)}</p>
+    <h2>Key Evidence</h2>${renderList(flow.delivery.key_evidence)}
+    <h2>Risks</h2>${renderList(flow.delivery.risks)}
+    <p class="muted">${escapeHtml(flow.delivery.disclaimer)}</p>
+  `;
+  $("finalThesis").innerHTML = `
+    <p>${escapeHtml(flow.final_report.executive_summary)}</p>
+    <dl class="kv">
+      <dt>Recommendation</dt><dd>${escapeHtml(flow.final_report.recommendation)}</dd>
+      <dt>Confidence</dt><dd>${escapeHtml(flow.final_report.confidence_score)}/100</dd>
+    </dl>
+    <h2>Hypotheses</h2>
+    ${renderList(flow.final_report.hypotheses.map((item) => `${item.case}: ${item.probability}% - ${item.thesis}`))}
+    <p class="muted">${escapeHtml(flow.final_report.human_approval_reminder)}</p>
+  `;
+}
+
+async function runMarketplace() {
+  const button = $("runMarketplace");
+  button.disabled = true;
+  button.textContent = "Running";
+  try {
+    const flow = await postJson("/api/marketplace", { request: $("marketRequest").value });
+    renderMarketplace(flow);
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Run Agent Market";
+  }
+}
+
 function renderKv(data) {
   return `<dl class="kv">${Object.entries(data)
     .filter(([key]) => key !== "source_metadata")
@@ -181,6 +262,10 @@ async function runScenario() {
 $("runResearch").addEventListener("click", runResearch);
 $("runScenario").addEventListener("click", runScenario);
 $("exportMemo").addEventListener("click", exportMemo);
+$("runMarketplace").addEventListener("click", runMarketplace);
+$("marketRequest").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") runMarketplace();
+});
 $("query").addEventListener("keydown", (event) => {
   if (event.key === "Enter") runResearch();
 });
@@ -188,4 +273,5 @@ $("scenario").addEventListener("keydown", (event) => {
   if (event.key === "Enter") runScenario();
 });
 
+runMarketplace();
 runResearch();

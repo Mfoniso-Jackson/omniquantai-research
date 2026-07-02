@@ -8,6 +8,7 @@ import traceback
 from urllib.parse import parse_qs, urlparse
 
 from omniquantai.exporters import render_investment_committee_memo
+from omniquantai.marketplace import REQUEST, run_marketplace_demo
 from omniquantai.orchestrator import OmniQuantOrchestrator
 from omniquantai.storage import RunStore
 
@@ -81,6 +82,11 @@ class OmniQuantHandler(SimpleHTTPRequestHandler):
                     return
                 result = orchestrator.run_scenario(scenario=scenario, run_id=run_id)
                 self._send_json(result)
+                return
+
+            if self.path == "/api/marketplace":
+                request = body.get("request", REQUEST).strip() or REQUEST
+                self._send_json(run_marketplace_demo(request))
                 return
 
             self._send_json({"error": "Not found"}, status=404)

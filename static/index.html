@@ -17,6 +17,44 @@
       </section>
 
       <section class="query-panel">
+        <label for="marketRequest">Agent marketplace request</label>
+        <div class="input-row">
+          <input id="marketRequest" value="Should our fund increase exposure to Nvidia over the next 6 months?" autocomplete="off">
+          <button id="runMarketplace">Run Agent Market</button>
+        </div>
+      </section>
+
+      <section class="market-strip">
+        <div><span>Research Request</span><strong id="marketStatus">Ready</strong></div>
+        <div><span>Winner Selected</span><strong id="winnerName">-</strong></div>
+        <div><span>Escrow Released</span><strong id="escrowStatus">-</strong></div>
+        <div><span>Final Thesis</span><strong id="marketRecommendation">-</strong></div>
+      </section>
+
+      <section class="grid market-grid">
+        <article class="panel wide">
+          <h2>Agent Bids</h2>
+          <div id="agentBids" class="content muted">Run the agent market to see seller bids.</div>
+        </article>
+        <article class="panel">
+          <h2>Winner Selected</h2>
+          <div id="winnerReasoning" class="content muted">No winner yet.</div>
+        </article>
+        <article class="panel">
+          <h2>Escrow Released</h2>
+          <div id="escrowPanel" class="content muted">No settlement yet.</div>
+        </article>
+        <article class="panel">
+          <h2>Financial Intelligence Delivered</h2>
+          <div id="deliveryPanel" class="content muted">No delivery yet.</div>
+        </article>
+        <article class="panel">
+          <h2>Final Investment Thesis</h2>
+          <div id="finalThesis" class="content muted">No synthesis yet.</div>
+        </article>
+      </section>
+
+      <section class="query-panel">
         <label for="query">Investment question</label>
         <div class="input-row">
           <input id="query" value="Analyse Nvidia as a long-term investment." autocomplete="off">

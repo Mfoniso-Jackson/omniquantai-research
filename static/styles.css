@@ -152,6 +152,42 @@ button:disabled {
   background: var(--line);
 }
 
+.market-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--line);
+  margin: 14px 0;
+}
+
+.market-strip > div {
+  min-height: 78px;
+  padding: 13px;
+  background: #fff;
+}
+
+.market-strip span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.market-strip strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.market-grid {
+  margin-bottom: 18px;
+}
+
 .summary-band > div {
   min-height: 86px;
   padding: 14px;
@@ -303,6 +339,7 @@ button:disabled {
   .input-row,
   .portfolio-row,
   .summary-band,
+  .market-strip,
   .grid,
   .hypothesis-row {
     grid-template-columns: 1fr;
